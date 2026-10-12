@@ -6,9 +6,8 @@
 # browser bundle, so never place a secret, service_role, or database key here.
 
 services:
-  - type: web
+  - type: static
     name: fbi-public-portal
-    runtime: static
     plan: free
     region: ohio
     branch: main
