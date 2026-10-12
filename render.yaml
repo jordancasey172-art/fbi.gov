@@ -1,0 +1,65 @@
+# Render Blueprint — deploys this site as a static web service.
+# Push this file to your repo, then in Render choose "New +" → "Blueprint"
+# and point it at the repository. Render reads this file automatically.
+#
+# All values below are PUBLIC build-time variables. They are embedded in the
+# browser bundle, so never place a secret, service_role, or database key here.
+
+services:
+  - type: web
+    name: fbi-public-portal
+    runtime: static
+    plan: free
+    region: ohio
+    branch: main
+
+    # Node 20 LTS keeps the Vite 7 / Tailwind 4 toolchain happy.
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: NODE_ENV
+        value: production
+
+      # --- Live support queue (optional) -------------------------------------
+      # Leave both blank to keep the same-browser local queue.
+      # Fill them in to let visitors on any device reach one shared duty inbox.
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+
+      # --- AI-drafted triage replies (optional) ------------------------------
+      # Any OpenAI-compatible /chat/completions endpoint. Without these the
+      # built-in rule-based responder handles every conversation.
+      - key: VITE_AI_ENDPOINT
+        sync: false
+      - key: VITE_AI_API_KEY
+        sync: false
+      - key: VITE_AI_MODEL
+        sync: false
+
+    buildCommand: npm ci || npm install
+    # Vite emits a single self-contained dist/index.html via vite-plugin-singlefile.
+    staticPublishPath: ./dist
+
+    # Single-page app: unknown paths fall back to the app shell so hash routes
+    # such as #support-inbox and #ic3 always resolve.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+        statusCode: 200
+
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+
+    # Redeploy whenever the source changes.
+    autoDeploy: true
